@@ -1,20 +1,21 @@
 package com.cadeia.ia.chatbotsfood.controller;
 
 import com.cadeia.ia.chatbotsfood.entity.Chat;
+import com.cadeia.ia.chatbotsfood.prompt.PromptResource;
 import com.cadeia.ia.chatbotsfood.repository.ChatRepository;
 import com.cadeia.ia.chatbotsfood.tools.ProductTool;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -23,22 +24,28 @@ import java.util.stream.Collectors;
 @CrossOrigin
 public class ChatbotController {
 
+    private static final Logger log = LoggerFactory.getLogger(ChatbotController.class);
     private final ChatClient chatClient;
     private final ProductTool productTool;
     private final ChatRepository chatRepository;
 
-    @Value("classpath:/prompts/chatbot.st")
-    private Resource chatbotResource;
+    private final PromptResource promptResource;
 
 
-    public ChatbotController(ChatClient.Builder builder, ChatRepository chatRepository, ProductTool productTool) {
+    public ChatbotController(ChatClient.Builder builder, ChatRepository chatRepository, ProductTool productTool, PromptResource promptResource) {
         this.chatClient = builder.build();
         this.chatRepository = chatRepository;
         this.productTool = productTool;
+        this.promptResource = promptResource;
     }
 
+    public record ChatRequest(String chatId, String message){}
+
     @PostMapping("/chat")
-    public String chat(@RequestParam String chatId, @RequestParam String message) {
+    public String chat(@RequestBody ChatRequest request) {
+
+        var chatId = request.chatId();
+        var message = request.message();
 
         Chat userMessage = new Chat();
         userMessage.setChatId(chatId);
@@ -57,10 +64,10 @@ public class ChatbotController {
 
 
         var response = chatClient.prompt()
-                        .user(message)
-                        .system(chatbotResource)
-                        .messages(messages)
+                        .system(promptResource.getPrompt())
                         .tools(productTool)
+                        .user(message)
+                        .messages(messages)
                         .call()
                         .content();
 
@@ -77,7 +84,7 @@ public class ChatbotController {
     public Flux<String> chatWithStream(@RequestParam String message) {
         return chatClient.prompt()
                 .user(message)
-                .system(chatbotResource)
+                .system(promptResource.getPrompt())
                 .stream()
                 .content();
     }

@@ -66,6 +66,10 @@
     const chatContainer = document.getElementById('chat-container');
     const sendButton = document.getElementById('send-button');
 
+    // Gera um ID único para a sessão de chat.
+    // Este ID será enviado a cada requisição para que o backend possa manter o contexto da conversa.
+    const sessionId = crypto.randomUUID();
+
     chatForm.addEventListener('submit', async function(event) {
         event.preventDefault();
         const userMessageText = messageInput.value.trim();
@@ -83,10 +87,17 @@
             const typingIndicator = appendMessage('SFOOD está digitando...', 'system typing-indicator');
 
             try {
-                // **AQUI ESTÁ A LÓGICA CORRIGIDA**
-                // Faz a chamada POST para o endpoint /chat
-                const response = await fetch('/chat?message=' + encodeURIComponent(userMessageText), {
-                    method: 'POST'
+                // **LÓGICA ATUALIZADA COM SESSION ID**
+                // Faz a chamada POST para o endpoint /chat, enviando a mensagem e o ID da sessão no corpo da requisição.
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: userMessageText,
+                        chatId: sessionId.toString()
+                    })
                 });
 
                 if (!response.ok) {

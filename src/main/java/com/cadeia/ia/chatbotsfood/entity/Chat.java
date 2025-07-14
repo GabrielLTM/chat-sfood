@@ -20,7 +20,7 @@ public class Chat {
     @Enumerated(EnumType.STRING)
     private Role role;
 
-    @Column
+    @Column(columnDefinition = "TEXT")
     private String text;
 
     @Column
