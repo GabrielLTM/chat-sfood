@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 
 @Component
-@Description("Ferramentas para consultar o catálogo de produtos") // Descrição geral da classe (opcional)
+@Description("Ferramentas para consultar o catálogo de produtos")
 public class ProductTool {
 
     private final ProductRepository productRepository;
@@ -18,10 +18,9 @@ public class ProductTool {
         this.productRepository = productRepository;
     }
 
-    public record FindByNameRequest(String name) {}
     public record ProductListResponse(List<Product> products) {}
 
-    @Tool(description = "Busca as informações do produto a partir do nome")
+    @Tool(name = "findProductByName", description = "Busca as informações do produto a partir do nome")
     public ProductListResponse findByName(@ToolParam(description = "O nome do produto") String name) {
         System.out.println("EXECUTANDO TOOL: findProductsByName com o parâmetro: " + name);
         List<Product> products = productRepository.findByNameContainingIgnoreCase(name);
@@ -29,7 +28,7 @@ public class ProductTool {
     }
     
 
-    @Tool(description = "Busca as informações de todos os produtos")
+    @Tool(name = "findAllProducts",description = "Busca as informações de todos os produtos")
     public ProductListResponse findAll() {
         System.out.println("EXECUTANDO TOOL: findAllProducts");
         List<Product> products = productRepository.findAll();
