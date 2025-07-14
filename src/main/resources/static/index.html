@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM Chatbot</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .user-message {
+            background-color: #DCF8C6;
+            align-self: flex-end;
+            border-radius: 10px 10px 0 10px;
+        }
+        .system-message {
+            background-color: #E5E7EB;
+            align-self: flex-start;
+            border-radius: 10px 10px 10px 0;
+        }
+        .message {
+            max-width: 70%;
+            padding: 8px 12px;
+            margin-bottom: 8px;
+            box-shadow: 0 1px 1px rgba(0,0,0,0.1);
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .typing-indicator {
+            color: #9CA3AF;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 h-screen flex flex-col">
+<div class="container mx-auto p-4 flex-1 flex flex-col">
+    <h1 class="text-2xl font-bold mb-4 text-center text-gray-800">SFOOD - Mercado Digital</h1>
+
+    <div id="chat-container" class="flex-1 overflow-y-auto mb-4 p-4 bg-white rounded-lg shadow">
+        <div id="chat-messages" class="flex flex-col space-y-2">
+        </div>
+    </div>
+
+    <form id="chat-form" class="flex items-center">
+        <input
+                type="text"
+                id="message-input"
+                name="message"
+                placeholder="Digite sua mensagem..."
+                class="flex-1 p-2 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+                autocomplete="off"
+        >
+        <button
+                type="submit"
+                id="send-button"
+                class="bg-blue-500 text-white px-4 py-2 rounded-r-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+            Enviar
+        </button>
+    </form>
+</div>
+
+<script>
+    const chatForm = document.getElementById('chat-form');
+    const messageInput = document.getElementById('message-input');
+    const chatMessages = document.getElementById('chat-messages');
+    const chatContainer = document.getElementById('chat-container');
+    const sendButton = document.getElementById('send-button');
+
+    chatForm.addEventListener('submit', async function(event) {
+        event.preventDefault();
+        const userMessageText = messageInput.value.trim();
+
+        if (userMessageText) {
+            appendMessage(userMessageText, 'user');
+            messageInput.value = '';
+            scrollToBottom();
+
+            // Desabilita o formulário enquanto aguarda a resposta
+            messageInput.disabled = true;
+            sendButton.disabled = true;
+
+            // Adiciona um indicador de "digitando..."
+            const typingIndicator = appendMessage('SFOOD está digitando...', 'system typing-indicator');
+
+            try {
+                // **AQUI ESTÁ A LÓGICA CORRIGIDA**
+                // Faz a chamada POST para o endpoint /chat
+                const response = await fetch('/chat?message=' + encodeURIComponent(userMessageText), {
+                    method: 'POST'
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const llmResponseText = await response.text();
+
+                // Remove o indicador de "digitando..."
+                typingIndicator.remove();
+                // Adiciona a resposta real da LLM
+                appendMessage(llmResponseText, 'system');
+
+            } catch (error) {
+                console.error('Error fetching chatbot response:', error);
+                typingIndicator.remove();
+                appendMessage('Desculpe, ocorreu um erro ao conectar com o assistente. Tente novamente.', 'system');
+            } finally {
+                // Reabilita o formulário
+                messageInput.disabled = false;
+                sendButton.disabled = false;
+                messageInput.focus();
+                scrollToBottom();
+            }
+        }
+    });
+
+    function appendMessage(text, sender) {
+        const messageElement = document.createElement('div');
+        messageElement.classList.add('message', sender === 'user' ? 'user-message' : 'system-message');
+        messageElement.textContent = text;
+        chatMessages.appendChild(messageElement);
+        scrollToBottom();
+        return messageElement; // Retorna o elemento para poder removê-lo (para o "digitando...")
+    }
+
+    function scrollToBottom() {
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+</script>
+</body>
+</html>
