@@ -62,7 +62,7 @@
 
         // Fetch streaming data from the server
         try {
-            const response = await fetchStreamWithRetry('/chat?message=' + encodeURIComponent(message));
+            const response = await fetchStreamWithRetry('/stream?message=' + encodeURIComponent(message));
             const reader = response.body.getReader();
             let botMessageElement = addMessageToChat('SFOOD', '');
             let contentElement = botMessageElement.querySelector('.message-content');

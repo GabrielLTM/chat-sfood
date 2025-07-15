@@ -10,12 +10,9 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.UserMessage;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.Resource;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -80,7 +77,7 @@ public class ChatbotController {
         return response;
     }
 
-    @PostMapping("/stream")
+    @GetMapping("/stream")
     public Flux<String> chatWithStream(@RequestParam String message) {
         return chatClient.prompt()
                 .user(message)
