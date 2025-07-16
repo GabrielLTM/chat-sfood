@@ -28,10 +28,17 @@ public class ProductTool {
     }
     
 
-    @Tool(name = "findAllProducts",description = "Busca as informações de todos os produtos")
+    @Tool(name = "findAllProducts",description = "Busca as informações de todos os produtos sem o usuario mencionar categoria")
     public ProductListResponse findAll() {
         System.out.println("EXECUTANDO TOOL: findAllProducts");
         List<Product> products = productRepository.findAll();
+        return new ProductListResponse(products);
+    }
+
+    @Tool(name = "findAllProductsByCategory", description = "Busca os produtos de uma determinada categoria")
+    public ProductListResponse findByCategory(@ToolParam(description = "A categoria do produto") String category){
+        System.out.println("EXECUTANDO TOOL: findAllProductsByCategory com o parâmetro" + category);
+        List<Product> products = productRepository.findByCategoryContainingIgnoreCase(category);
         return new ProductListResponse(products);
     }
 }
