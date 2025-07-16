@@ -7,15 +7,18 @@ import com.cadeia.ia.chatbotsfood.tools.ProductTool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
+import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.chat.memory.MessageWindowChatMemory;
+import org.springframework.ai.chat.memory.repository.jdbc.JdbcChatMemoryRepository;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.UserMessage;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.Resource;
+import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,8 +31,12 @@ public class ChatbotController {
     private final ChatClient chatClient;
     private final ProductTool productTool;
     private final ChatRepository chatRepository;
-
+    @Autowired
+    private ChatModel chatModel;
     private final PromptResource promptResource;
+
+    @Autowired
+    JdbcChatMemoryRepository chatMemoryRepository;
 
 
     public ChatbotController(ChatClient.Builder builder, ChatRepository chatRepository, ProductTool productTool, PromptResource promptResource) {
@@ -61,13 +68,18 @@ public class ChatbotController {
                         : new AssistantMessage(m.getText()))
                 .collect(Collectors.toList());
 
+        ChatMemory chatMemory = MessageWindowChatMemory.builder().build();
+
+        ChatClient chatClient = ChatClient.builder(chatModel)
+                .defaultAdvisors(MessageChatMemoryAdvisor.builder(chatMemory).build())
+                .build();
 
 
         var response = chatClient.prompt()
                         .system(promptResource.getPrompt())
                         .tools(productTool)
                         .user(message)
-                        .messages(messages)
+                          .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, chatId))
                         .call()
                         .content();
 
