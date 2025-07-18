@@ -1,142 +1,218 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR" class="">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LLM Chatbot</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        .user-message {
-            background-color: #DCF8C6;
-            align-self: flex-end;
-            border-radius: 10px 10px 0 10px;
-        }
-        .system-message {
-            background-color: #E5E7EB;
-            align-self: flex-start;
-            border-radius: 10px 10px 10px 0;
-        }
-        .message {
-            max-width: 70%;
-            padding: 8px 12px;
-            margin-bottom: 8px;
-            box-shadow: 0 1px 1px rgba(0,0,0,0.1);
-            white-space: pre-wrap;
-            word-wrap: break-word;
-        }
-        .typing-indicator {
-            color: #9CA3AF;
-            font-style: italic;
-        }
-    </style>
-</head>
-<body class="bg-gray-100 h-screen flex flex-col">
-<div class="container mx-auto p-4 flex-1 flex flex-col">
-    <h1 class="text-2xl font-bold mb-4 text-center text-gray-800">SFOOD - Mercado Digital</h1>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SFOOD Chat</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class'
+    }
+  </script>
+  <style>
+    /* Mensagens (usuário e bot) com mesma cor */
+    .message-wrapper {
+      max-width: 70%;
+      margin-bottom: 12px;
+      word-wrap: break-word;
+      white-space: pre-wrap;
+    }
 
-    <div id="chat-container" class="flex-1 overflow-y-auto mb-4 p-4 bg-white rounded-lg shadow">
-        <div id="chat-messages" class="flex flex-col space-y-2">
-        </div>
+    .user-message, .system-message {
+      background-color: #e5e7eb; /* cinza claro */
+      color: #111;
+      border-radius: 12px;
+      padding: 8px 12px;
+      box-shadow: 0 1px 1px rgba(0,0,0,0.1);
+    }
+    .dark .user-message, .dark .system-message {
+      background-color: #374151; /* cinza escuro */
+      color: #d1d5db;
+    }
+
+    /* Alinhamento */
+    .user-wrapper {
+      align-self: flex-end;
+    }
+    .system-wrapper {
+      align-self: flex-start;
+    }
+
+    /* Títulos acima das mensagens */
+    .sender-label {
+      font-size: 0.75rem; /* text-xs */
+      font-weight: 600;
+      margin-bottom: 2px;
+      user-select: none;
+    }
+    .user-label {
+      color: #6b7280; /* cinza escuro no claro */
+    }
+    .dark .user-label {
+      color: #9ca3af; /* cinza claro no escuro */
+    }
+    .system-label {
+      color: #374151; /* cinza médio no claro */
+    }
+    .dark .system-label {
+      color: #d1d5db; /* cinza claro no escuro */
+    }
+
+    /* Indicador de digitação */
+    .typing-indicator {
+      font-style: italic;
+      color: #9ca3af;
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 h-screen flex overflow-hidden">
+
+  <!-- MENU LATERAL COM LOGO -->
+  <aside class="w-64 h-full bg-white dark:bg-gray-900 border-r dark:border-gray-700 flex flex-col justify-between p-4">
+    <div>
+      <div class="flex justify-center mb-6">
+        <img src="logo.png" alt="SFOOD Logo" class="h-12 object-contain" />
+      </div>
+      <nav class="flex flex-col space-y-3">
+        <button onclick="focusInput()" class="flex items-center text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 px-3 py-2 rounded transition">
+          <span class="mr-2">📝</span> Nova Conversa
+        </button>
+        <button onclick="apagarConversas()" class="flex items-center text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 px-3 py-2 rounded transition">
+          <span class="mr-2">🗑️</span> Limpar Histórico
+        </button>
+        <button onclick="toggleTheme()" class="flex items-center text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 px-3 py-2 rounded transition">
+          <span class="mr-2">🌓</span> Alternar Tema
+        </button>
+      </nav>
+    </div>
+    <div class="text-xs text-gray-400 dark:text-gray-600 text-center mt-6">
+      © 2025 SFOOD
+    </div>
+  </aside>
+
+  <!-- ÁREA PRINCIPAL -->
+  <main class="flex-1 flex flex-col p-4 overflow-hidden text-gray-800 dark:text-white">
+    <h1 class="text-2xl font-bold mb-4 text-center">SFOOD - Mercado Digital</h1>
+
+    <div id="chat-container" class="flex-1 overflow-y-auto mb-4 p-4 bg-white dark:bg-gray-800 rounded-lg shadow relative">
+      <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <img src="2.png" alt="Logo SFOOD" class="w-48 opacity-20" />
+      </div>
+      <div id="chat-messages" class="flex flex-col space-y-2 relative z-10"></div>
     </div>
 
     <form id="chat-form" class="flex items-center">
-        <input
-                type="text"
-                id="message-input"
-                name="message"
-                placeholder="Digite sua mensagem..."
-                class="flex-1 p-2 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-                autocomplete="off"
-        >
-        <button
-                type="submit"
-                id="send-button"
-                class="bg-blue-500 text-white px-4 py-2 rounded-r-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-            Enviar
-        </button>
+      <input
+        type="text"
+        id="message-input"
+        name="message"
+        placeholder="Digite sua mensagem..."
+        class="flex-1 p-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        required
+        autocomplete="off"
+      />
+      <button
+        type="submit"
+        id="send-button"
+        class="bg-blue-500 text-white px-4 py-2 rounded-r-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      >
+        Enviar
+      </button>
     </form>
-</div>
+  </main>
 
-<script>
+  <script>
     const chatForm = document.getElementById('chat-form');
     const messageInput = document.getElementById('message-input');
     const chatMessages = document.getElementById('chat-messages');
-    const chatContainer = document.getElementById('chat-container');
     const sendButton = document.getElementById('send-button');
-
-    // Gera um ID único para a sessão de chat.
-    // Este ID será enviado a cada requisição para que o backend possa manter o contexto da conversa.
     const sessionId = crypto.randomUUID();
 
-    chatForm.addEventListener('submit', async function(event) {
-        event.preventDefault();
-        const userMessageText = messageInput.value.trim();
+    function toggleTheme() {
+      const html = document.documentElement;
+      html.classList.toggle('dark');
+      localStorage.setItem('theme', html.classList.contains('dark') ? 'dark' : 'light');
+    }
 
-        if (userMessageText) {
-            appendMessage(userMessageText, 'user');
-            messageInput.value = '';
-            scrollToBottom();
+    window.addEventListener('DOMContentLoaded', () => {
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme === 'dark') document.documentElement.classList.add('dark');
+    });
 
-            // Desabilita o formulário enquanto aguarda a resposta
-            messageInput.disabled = true;
-            sendButton.disabled = true;
+    chatForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const userMessage = messageInput.value.trim();
+      if (!userMessage) return;
 
-            // Adiciona um indicador de "digitando..."
-            const typingIndicator = appendMessage('SFOOD está digitando...', 'system typing-indicator');
+      appendMessage(userMessage, 'user');
+      messageInput.value = '';
+      scrollToBottom();
 
-            try {
-                // **LÓGICA ATUALIZADA COM SESSION ID**
-                // Faz a chamada POST para o endpoint /chat, enviando a mensagem e o ID da sessão no corpo da requisição.
-                const response = await fetch('/chat', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        message: userMessageText,
-                        chatId: sessionId.toString()
-                    })
-                });
+      messageInput.disabled = true;
+      sendButton.disabled = true;
 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
+      const typingIndicator = appendMessage('SFOOD está digitando...', 'system typing-indicator');
 
-                const llmResponseText = await response.text();
+      try {
+        const response = await fetch('/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: userMessage, chatId: sessionId })
+        });
 
-                // Remove o indicador de "digitando..."
-                typingIndicator.remove();
-                // Adiciona a resposta real da LLM
-                appendMessage(llmResponseText, 'system');
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
-            } catch (error) {
-                console.error('Error fetching chatbot response:', error);
-                typingIndicator.remove();
-                appendMessage('Desculpe, ocorreu um erro ao conectar com o assistente. Tente novamente.', 'system');
-            } finally {
-                // Reabilita o formulário
-                messageInput.disabled = false;
-                sendButton.disabled = false;
-                messageInput.focus();
-                scrollToBottom();
-            }
-        }
+        const botResponse = await response.text();
+        typingIndicator.remove();
+        appendMessage(botResponse, 'system');
+      } catch (err) {
+        typingIndicator.remove();
+        appendMessage('Erro ao conectar com o assistente. Tente novamente.', 'system');
+      } finally {
+        messageInput.disabled = false;
+        sendButton.disabled = false;
+        messageInput.focus();
+        scrollToBottom();
+      }
     });
 
     function appendMessage(text, sender) {
-        const messageElement = document.createElement('div');
-        messageElement.classList.add('message', sender === 'user' ? 'user-message' : 'system-message');
-        messageElement.textContent = text;
-        chatMessages.appendChild(messageElement);
-        scrollToBottom();
-        return messageElement; // Retorna o elemento para poder removê-lo (para o "digitando...")
+      const wrapper = document.createElement('div');
+      wrapper.classList.add('message-wrapper');
+      wrapper.classList.add(sender === 'user' ? 'user-wrapper' : 'system-wrapper');
+
+      // Criar label do remetente
+      const label = document.createElement('div');
+      label.classList.add('sender-label');
+      label.classList.add(sender === 'user' ? 'user-label' : 'system-label');
+      label.textContent = sender === 'user' ? 'Cliente' : 'SFOOD - BOT';
+
+      // Criar a mensagem
+      const message = document.createElement('div');
+      message.classList.add(sender === 'user' ? 'user-message' : 'system-message');
+      message.textContent = text;
+
+      wrapper.appendChild(label);
+      wrapper.appendChild(message);
+
+      chatMessages.appendChild(wrapper);
+      return wrapper;
     }
 
     function scrollToBottom() {
-        chatContainer.scrollTop = chatContainer.scrollHeight;
+      chatMessages.lastElementChild?.scrollIntoView({ behavior: 'smooth' });
     }
-</script>
+
+    function focusInput() {
+      messageInput.focus();
+    }
+
+    function apagarConversas() {
+      chatMessages.innerHTML = '';
+      messageInput.focus();
+    }
+  </script>
 </body>
 </html>

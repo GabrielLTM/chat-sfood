@@ -63,7 +63,6 @@ public class ChatbotController {
         var response = chatClient.prompt()
                         .system(promptResource.getPrompt())
                         .tools(productTool)
-                        .user(message)
                         .messages(messages)
                         .call()
                         .content();
